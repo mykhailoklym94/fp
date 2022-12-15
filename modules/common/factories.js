@@ -4,6 +4,7 @@ const Discount = ({ percentage, maxAmount }) => ({
 })
 
 const Product = ({ name, price }) => ({
+  id: Math.floor(Math.random() * 100000),
   name,
   price
 })
