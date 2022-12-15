@@ -14,5 +14,4 @@ Modules:
 
 - Monads
   - Either[https://www.youtube.com/watch?v=Z6ZBYf7BxUo]
-  - Maybe
-  - Task
+  - Maybe[https://youtu.be/nZwo2DrqM90]
