@@ -1,5 +1,11 @@
 const Right = value => ({
-  map: (fn) => Right(fn(value)),
+  map: (fn) => {
+    try {
+      return Right(fn(value))
+    } catch (error) {
+      return Left(error)
+    }
+  },
   flatMap: fn => fn(value),
   fold: (fn) => fn(null, value)
 })
@@ -15,5 +21,7 @@ const Left = (value) => ({
 const Either = (value) => Right(value);
 
 module.exports = {
-  Either
+  Either,
+  Left,
+  Right
 }

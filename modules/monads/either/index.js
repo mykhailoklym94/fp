@@ -1,42 +1,47 @@
-const { pipe, curry, map } = require("rambda");
-const { Either } = require("./lib")
+const { Discount, Product, OrderItem, Error } = require("../../common/factories");
+const { logger } = require("../../common/logger");
 
-const Discount = ({ percentage, maxAmount }) => ({
-  percentage,
-  maxAmount
-})
-
-const Product = ({ name, price }) => ({
-  name,
-  price
-})
-
-const OrderItem = ({ quantity, product }) => ({
-  quantity,
-  product
-});
+const { Either, Left, Right } = require("./lib")
 
 const getItemTotalWithoutDiscount = (orderItem) => {
-  if (!orderItem.quantity || !orderItem.product?.price) {
-    throw new Error("[getItemTotalWithoutDiscount] Invalid params");
+  logger.debug('[getItemTotalWithoutDiscount] Invoked');
+
+  if (!orderItem || !isFinite(orderItem.quantity) || !orderItem.product || !isFinite(orderItem.product.price)) {
+    return Left(Error({
+      origin: "[getItemTotalWithoutDiscount]",
+      key: "INVALID_PARAMS"
+    }))
   }
 
-  return orderItem.quantity * orderItem.product.price
+  return Right(orderItem.quantity * orderItem.product.price)
 };
 
 const applyDiscount = (total, discount) => {
-  if (!isFinite(total) || !discount) {
-    throw new Error("[getItemTotalWithoutDiscount] Invalid params");
+  logger.debug('[applyDiscount] Invoked');
+
+  if (!isFinite(total) || !discount || !isFinite(discount.percentage)) {
+    return Left(Error({
+      origin: "[applyDiscount]",
+      key: "INVALID_PARAMS"
+    }))
   }
 
-  return Math.min(discount.maxAmount, total * discount.percentage);
+  return Right(Math.min(discount.maxAmount, total * discount.percentage));
 };
 
 const calculateTotal = (orderItem, discount) => {
+  logger.debug('[calculateTotal] Invoked');
+
   return Either(orderItem)
-    .map(getItemTotalWithoutDiscount)
-    .map((totalAmountWithDiscount) => applyDiscount(totalAmountWithDiscount, discount))
+    .flatMap(getItemTotalWithoutDiscount)
+    .flatMap((totalAmountWithDiscount) => applyDiscount(totalAmountWithDiscount, discount))
     .fold((error, result) => {
+      if (error) {
+        logger.error(`[monads][either] Failed to calculate discount - ${JSON.stringify(error, null, 4)}`)
+        return error;
+      }
+
+      logger.info(`[monads][either] Successfully calculated discount - ${result}`)
       return result
     })
 }
@@ -55,8 +60,13 @@ const main = () => {
     maxAmount: 2000
   });
 
-  const totalWithDiscount = calculateTotal(orderItem, discount)
-  console.log("🚀 ~ file: index.js:37 ~ main ~ totalWithoutDiscount", totalWithDiscount)
+  logger.debug('First run')
+  calculateTotal(orderItem, discount);
+
+  logger.debug('__________')
+
+  logger.debug('Second run')
+  calculateTotal(null, null);
 }
 
 main();
